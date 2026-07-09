@@ -70,6 +70,10 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
 }
 
 export async function generateStaticParams() {
+  // No DB at build time: defer all static generation to runtime (ISR).
+  if (!process.env.DATABASE_URI && !process.env.DATABASE_URL && !process.env.DB_HOST) {
+    return []
+  }
   const payload = await getPayload({ config: configPromise })
   const { totalDocs } = await payload.count({
     collection: 'posts',

@@ -14,6 +14,10 @@ import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 
 export async function generateStaticParams() {
+  // No DB at build time: defer all static generation to runtime (ISR).
+  if (!process.env.DATABASE_URI && !process.env.DATABASE_URL && !process.env.DB_HOST) {
+    return []
+  }
   const payload = await getPayload({ config: configPromise })
   const pages = await payload.find({
     collection: 'pages',
