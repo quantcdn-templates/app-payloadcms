@@ -28,3 +28,11 @@ docker-compose.override.yml
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Generated public assets and uploads
+public/media/
+public/robots.txt
+public/sitemap*.xml
+
+# SDD scratch
+.superpowers/

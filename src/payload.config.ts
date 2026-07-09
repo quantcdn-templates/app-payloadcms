@@ -18,6 +18,17 @@ import { getServerSideURL } from './utilities/getURL'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+// Quant Cloud injects DB_* credentials for managed Postgres/RDS; a full
+// DATABASE_URI (e.g. bring-your-own RDS or hosted Postgres) takes precedence.
+// DATABASE_URL is kept as an alias for compatibility with upstream Payload
+// docs and this scaffold's own .env.example.
+const databaseUri =
+  process.env.DATABASE_URI ||
+  process.env.DATABASE_URL ||
+  (process.env.DB_HOST
+    ? `postgresql://${process.env.DB_USERNAME || ''}:${encodeURIComponent(process.env.DB_PASSWORD || '')}@${process.env.DB_HOST}:${process.env.DB_PORT || '5432'}/${process.env.DB_DATABASE || ''}`
+    : '')
+
 export default buildConfig({
   admin: {
     components: {
@@ -59,7 +70,8 @@ export default buildConfig({
   editor: defaultLexical,
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL || '',
+      connectionString: databaseUri,
+      ...(process.env.DB_SSL === 'true' ? { ssl: { rejectUnauthorized: false } } : {}),
     },
   }),
   collections: [Pages, Posts, Media, Categories, Users],
