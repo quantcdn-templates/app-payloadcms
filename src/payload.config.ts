@@ -4,6 +4,7 @@ import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
 import { fileURLToPath } from 'url'
 
+import { migrations } from './migrations'
 import { Categories } from './collections/Categories'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
@@ -73,6 +74,9 @@ export default buildConfig({
       connectionString: databaseUri,
       ...(process.env.DB_SSL === 'true' ? { ssl: { rejectUnauthorized: false } } : {}),
     },
+    // Applies committed migrations on production boot; throws (and fails the
+    // deploy) if a migration fails. Dev mode still uses schema push.
+    prodMigrations: migrations,
   }),
   collections: [Pages, Posts, Media, Categories, Users],
   cors: [getServerSideURL()].filter(Boolean),
