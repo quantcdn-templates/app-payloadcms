@@ -1,0 +1,21 @@
+# Copy to docker-compose.override.yml for local development
+#
+# Usage:
+#   cp docker-compose.override.yml.example docker-compose.override.yml
+#   docker compose up
+#
+services:
+  app:
+    build:
+      context: .
+    environment:
+      # Disable proxy for local development
+      - QUANT_PROXY_ENABLED=false
+      # Enable debug logging
+      - LOG_DEBUG=true
+    ports:
+      - "3000:3001"  # Map to app port directly when proxy disabled
+
+  db:
+    ports:
+      - "5432:5432"  # Expose Postgres for payload migrate:create / psql
