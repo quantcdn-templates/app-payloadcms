@@ -27,7 +27,7 @@ const databaseUri =
   process.env.DATABASE_URI ||
   process.env.DATABASE_URL ||
   (process.env.DB_HOST
-    ? `postgresql://${process.env.DB_USERNAME || ''}:${encodeURIComponent(process.env.DB_PASSWORD || '')}@${process.env.DB_HOST}:${process.env.DB_PORT || '5432'}/${process.env.DB_DATABASE || ''}`
+    ? `postgresql://${encodeURIComponent(process.env.DB_USERNAME || '')}:${encodeURIComponent(process.env.DB_PASSWORD || '')}@${process.env.DB_HOST}:${process.env.DB_PORT || '5432'}/${process.env.DB_DATABASE || ''}`
     : '')
 
 export default buildConfig({

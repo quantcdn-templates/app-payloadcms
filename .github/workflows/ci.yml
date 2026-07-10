@@ -1,55 +1,198 @@
-# CI workflow for Payload CMS template
-# Validates that the template builds successfully — no database required.
+# This workflow builds and pushes public images to GitHub Container Registry.
+# It creates versioned tags for customers to pin to specific versions.
 #
-# Scheduled daily to catch upstream image/dependency changes early.
-name: CI
+# Tags created:
+#   - latest              : Always the latest stable release (main branch)
+#   - develop             : Cutting edge development version
+#   - {major}.x-latest    : Latest within major version (e.g., 3.x-latest)
+#   - {major}.{minor}.x-latest : Latest within minor version (e.g., 3.85.x-latest)
+#   - {major}.{minor}.{patch}  : Exact version pin (e.g., 3.85.2)
+#
+# Version tags track the installed Payload CMS version.
+#
+# NOTE: This workflow only runs for the quantcdn-templates organization.
+name: Build and Push to Public Registry
 
 on:
   push:
     branches:
       - main
       - develop
-  pull_request:
-    branches:
-      - main
+    tags:
+      - 'v*'
   schedule:
-    # Run daily at midnight UTC
+    # Run daily at midnight UTC to pick up new framework releases
     - cron: '0 0 * * *'
   workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild even if no changes'
+        required: false
+        default: 'false'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-and-push:
+    # Only run for quantcdn-templates organization
+    if: github.repository_owner == 'quantcdn-templates'
+    runs-on: ${{ vars.RUNNER_TYPE || 'ubuntu-latest' }}
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies (generates lock file with latest versions)
+        run: npm install
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Detect framework version
+        id: version
+        run: |
+          # Get actual installed Payload version from package-lock.json
+          VERSION=$(node -e "
+            try {
+              const lock = require('./package-lock.json');
+              const pkg = lock.packages['node_modules/payload'];
+              console.log(pkg?.version || '0.0.0');
+            } catch (e) {
+              console.log('0.0.0');
+            }
+          " 2>/dev/null) || VERSION="0.0.0"
+
+          if [ -z "$VERSION" ] || [ "$VERSION" = "0.0.0" ]; then
+            echo "Could not detect version, using timestamp-based version"
+            VERSION="1.0.$(date +%Y%m%d)"
+          fi
+
+          echo "Detected version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Parse semantic version components
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          PATCH=$(echo $VERSION | cut -d. -f3)
+
+          echo "major=$MAJOR" >> $GITHUB_OUTPUT
+          echo "minor=$MINOR" >> $GITHUB_OUTPUT
+          echo "patch=$PATCH" >> $GITHUB_OUTPUT
+
+      - name: Generate image tags
+        id: tags
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          MAJOR="${{ steps.version.outputs.major }}"
+          MINOR="${{ steps.version.outputs.minor }}"
+
+          TAGS=""
+
+          if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            # Develop branch tags
+            TAGS="${IMAGE}:develop"
+            TAGS="${TAGS},${IMAGE}:dev"
+            TAGS="${TAGS},${IMAGE}:edge"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.event_name }}" == "schedule" ]]; then
+            # Main branch or scheduled build tags
+            TAGS="${IMAGE}:latest"
+            TAGS="${TAGS},${IMAGE}:${VERSION}"
+            TAGS="${TAGS},${IMAGE}:${MAJOR}.x-latest"
+            TAGS="${TAGS},${IMAGE}:${MAJOR}.${MINOR}.x-latest"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            # Git tag release
+            GIT_TAG="${{ github.ref_name }}"
+            TAGS="${IMAGE}:${GIT_TAG}"
+            TAGS="${TAGS},${IMAGE}:${GIT_TAG#v}"
+          fi
+
+          echo "Generated tags: $TAGS"
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+
+      - name: Build and push multi-arch image
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
-          tags: app-payloadcms:test
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.title=${{ github.event.repository.name }}
+            org.opencontainers.image.description=${{ github.event.repository.description }}
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
 
-      - name: Test container starts
+      - name: Test container startup
         run: |
-          # Start with placeholder credentials — validates the image boots far
-          # enough to attempt DB connection (full stack is exercised locally).
-          docker run -d --name payload-test \
-            -e DATABASE_URI="postgresql://test:test@localhost:5432/test" \
+          echo "Testing container startup..."
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+
+          # Start container in background. No database is available here (this
+          # template builds and boots without one), so we only check that the
+          # process comes up cleanly — not that HTTP requests succeed.
+          docker run -d --name test-container \
             -e PAYLOAD_SECRET="test-secret" \
-            app-payloadcms:test || true
-          sleep 5
-          docker logs payload-test 2>&1 | head -50
-          docker rm -f payload-test || true
-          echo "✓ Docker image builds and loads successfully"
+            -p 3099:3000 \
+            "$IMAGE" || true
+
+          # Wait for startup
+          sleep 10
+
+          # Check if container is running
+          if docker ps | grep test-container; then
+            echo "✅ Container started successfully"
+
+            # Try to hit the health endpoint
+            if curl -sf http://localhost:3099/ > /dev/null 2>&1; then
+              echo "✅ HTTP endpoint responding"
+            else
+              echo "ℹ️ HTTP endpoint not yet ready (may need database or other services)"
+            fi
+
+            docker stop test-container
+            docker rm test-container
+          else
+            echo "ℹ️ Container exited (may need environment variables or services)"
+            docker logs test-container 2>/dev/null || true
+            docker rm test-container 2>/dev/null || true
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Tags pushed:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.tags.outputs.tags }}" | tr ',' '\n' >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

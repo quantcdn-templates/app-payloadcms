@@ -7,8 +7,10 @@ WORKDIR /build
 # Copy package files (.npmrc is required for npm ci: legacy-peer-deps=true)
 COPY package*.json .npmrc ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (package-lock.json is git-ignored in this template,
+# so a clean checkout has none and `npm ci` would hard-fail; `npm install`
+# resolves from package.json instead)
+RUN npm install
 
 # Copy source files
 COPY . .

@@ -13,7 +13,7 @@ services:
       - QUANT_PROXY_ENABLED=false
       # Enable debug logging
       - LOG_DEBUG=true
-    ports:
+    ports: !override
       - "3000:3001"  # Map to app port directly when proxy disabled
 
   db:
