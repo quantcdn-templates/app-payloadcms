@@ -1,0 +1,11 @@
+[{
+    "title": "Payload CMS",
+    "url": "/deploy/step-one?template=app-payloadcms",
+    "summary": "Payload 3 headless CMS with Next.js front-end and PostgreSQL.",
+    "content": "Deploy Payload CMS 3 on Quant Cloud — a code-first headless CMS built on Next.js with a PostgreSQL database. Ships the official website starter with pages, posts, media library, live preview, and SEO tooling.",
+    "image": "https://raw.githubusercontent.com/quantcdn-templates/app-payloadcms/main/quant/screenshot.png",
+    "categories": ["javascript", "ssr", "cms", "react"],
+    "tags": ["payload", "payloadcms", "nextjs", "react", "typescript", "postgres"],
+    "template_type": "app",
+    "requires_db": true
+}]
