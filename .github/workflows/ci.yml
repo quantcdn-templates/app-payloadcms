@@ -134,11 +134,14 @@ jobs:
           echo "Generated tags: $TAGS"
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
 
-      - name: Build and push multi-arch image
+      - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          # amd64 only: the Next.js/Payload build segfaults under QEMU arm64
+          # emulation (Node JIT + qemu-user). Quant Cloud deploys default to
+          # linux/amd64, and local dev builds from source natively.
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.tags.outputs.tags }}
           cache-from: type=gha
