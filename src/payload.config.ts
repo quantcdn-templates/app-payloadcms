@@ -35,8 +35,21 @@ const databaseUri =
 // accepted, taking precedence). When neither is set, Payload logs emails to
 // the console instead of sending — fine for local dev, but set these in
 // production or password resets go nowhere. Port 465 = implicit TLS.
-const smtpHost = process.env.SMTP_HOST || process.env.QUANT_SMTP_HOST
-const smtpPort = Number(process.env.SMTP_PORT || process.env.QUANT_SMTP_PORT || 587)
+//
+// When QUANT_SMTP_RELAY_ENABLED=true the app-node base image runs a local
+// Postfix relay on 127.0.0.1:25 (it handles upstream TLS + auth and gives
+// queueing/retry); send through it unauthenticated. Otherwise connect to
+// the upstream relay directly with credentials.
+const smtpRelayEnabled = process.env.QUANT_SMTP_RELAY_ENABLED === 'true'
+const smtpHost =
+  process.env.SMTP_HOST || (smtpRelayEnabled ? '127.0.0.1' : process.env.QUANT_SMTP_HOST)
+const smtpPort = Number(
+  process.env.SMTP_PORT || (smtpRelayEnabled ? 25 : process.env.QUANT_SMTP_PORT || 587),
+)
+const smtpUser =
+  process.env.SMTP_USER || (smtpRelayEnabled ? undefined : process.env.QUANT_SMTP_USERNAME)
+const smtpPass =
+  process.env.SMTP_PASS || (smtpRelayEnabled ? undefined : process.env.QUANT_SMTP_PASSWORD)
 
 export default buildConfig({
   ...(smtpHost
@@ -48,10 +61,7 @@ export default buildConfig({
             host: smtpHost,
             port: smtpPort,
             secure: smtpPort === 465,
-            auth: {
-              user: process.env.SMTP_USER || process.env.QUANT_SMTP_USERNAME,
-              pass: process.env.SMTP_PASS || process.env.QUANT_SMTP_PASSWORD,
-            },
+            ...(smtpUser ? { auth: { user: smtpUser, pass: smtpPass } } : {}),
           },
         }),
       }
