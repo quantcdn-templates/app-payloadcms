@@ -3,7 +3,7 @@ services:
     build:
       context: .
       args:
-        NODE_VERSION: "22"
+        NODE_VERSION: "24"
     restart: unless-stopped
     ports:
       - "3000:3000"

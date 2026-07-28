@@ -6,7 +6,8 @@
 
 ## Architecture
 
-- Next.js 15 standalone build behind the Quant proxy (app on port 3001, proxy on 3000)
+- Next.js 16 standalone build on Node 24 behind the Quant proxy (app on port 3001, proxy on 3000)
+  - Node 24 is required if you enable Next 16's Cache Components (`cacheComponents: true`) — its runtime is broken on Node 22. Cache Components also rejects empty `generateStaticParams`, which is why this template builds with `--experimental-build-mode compile`
 - PostgreSQL via `@payloadcms/db-postgres` — works with Quant managed Postgres or your own RDS instance
 - Media uploads stored on a persistent volume (EFS on Quant Cloud) at `MEDIA_DIR`
 - No database needed at build time: pages render on first request and are cached (ISR); Payload's publish hooks revalidate changed pages automatically
