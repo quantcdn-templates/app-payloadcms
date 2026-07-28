@@ -22,6 +22,7 @@
 | `DB_HOST` / `DB_PORT` / `DB_DATABASE` / `DB_USERNAME` / `DB_PASSWORD` | Injected by Quant Cloud managed Postgres; assembled into a connection string automatically | One of these |
 | `DB_SSL` | Set `true` for TLS-enforcing databases (e.g. RDS) when using `DB_*` vars | No |
 | `MEDIA_DIR` | Upload directory (default `/data/media`) | No |
+| `QUANT_SMTP_HOST` / `QUANT_SMTP_PORT` / `QUANT_SMTP_USERNAME` / `QUANT_SMTP_PASSWORD` / `QUANT_SMTP_FROM` | SMTP relay for Payload emails (password resets etc.). Unset = emails are logged, not sent. Generic `SMTP_*` names also accepted. Port 465 = implicit TLS | No |
 | `NEXT_PUBLIC_SERVER_URL` | Public URL of the site (used for live preview/SEO links) | Recommended |
 
 ## Local Development

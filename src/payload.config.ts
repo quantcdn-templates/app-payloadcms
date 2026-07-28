@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import sharp from 'sharp'
 import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
@@ -30,7 +31,31 @@ const databaseUri =
     ? `postgresql://${encodeURIComponent(process.env.DB_USERNAME || '')}:${encodeURIComponent(process.env.DB_PASSWORD || '')}@${process.env.DB_HOST}:${process.env.DB_PORT || '5432'}/${process.env.DB_DATABASE || ''}`
     : '')
 
+// SMTP via Quant Cloud's QUANT_SMTP_* convention (generic SMTP_* also
+// accepted, taking precedence). When neither is set, Payload logs emails to
+// the console instead of sending — fine for local dev, but set these in
+// production or password resets go nowhere. Port 465 = implicit TLS.
+const smtpHost = process.env.SMTP_HOST || process.env.QUANT_SMTP_HOST
+const smtpPort = Number(process.env.SMTP_PORT || process.env.QUANT_SMTP_PORT || 587)
+
 export default buildConfig({
+  ...(smtpHost
+    ? {
+        email: nodemailerAdapter({
+          defaultFromAddress: process.env.SMTP_FROM || process.env.QUANT_SMTP_FROM || '',
+          defaultFromName: process.env.SMTP_FROM_NAME || 'Payload CMS',
+          transportOptions: {
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpPort === 465,
+            auth: {
+              user: process.env.SMTP_USER || process.env.QUANT_SMTP_USERNAME,
+              pass: process.env.SMTP_PASS || process.env.QUANT_SMTP_PASSWORD,
+            },
+          },
+        }),
+      }
+    : {}),
   admin: {
     components: {
       // The `BeforeLogin` component renders a message that you see while logging into your admin panel.
