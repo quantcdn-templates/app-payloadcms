@@ -43,4 +43,7 @@ ENV MEDIA_DIR=/data/media
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+# HOSTNAME must be forced at exec time: Fargate's container runtime sets HOSTNAME to the
+# task ENI hostname, overriding the ENV above — Next standalone then binds to the ENI IP
+# and the quant-proxy's 127.0.0.1:3001 forward gets ECONNREFUSED.
+CMD ["sh", "-c", "HOSTNAME=0.0.0.0 exec node server.js"]

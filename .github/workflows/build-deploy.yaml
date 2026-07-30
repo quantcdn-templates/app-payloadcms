@@ -38,7 +38,7 @@ jobs:
           platforms: ${{ vars.BUILD_PLATFORM || 'linux/amd64' }}
           push: true
           tags: |
-            ${{ steps.init.outputs.stripped_endpoint }}/${{ secrets.QUANT_ORGANIZATION }}/${{ steps.init.outputs.quant_application }}:payloadcms-${{ steps.init.outputs.image_suffix_clean }}
+            ${{ steps.init.outputs.stripped_endpoint }}/${{ secrets.QUANT_ORGANIZATION }}/${{ steps.init.outputs.quant_application }}:app-${{ steps.init.outputs.image_suffix_clean }}
           cache-from: type=gha,scope=payloadcms
           cache-to: type=gha,mode=max,scope=payloadcms
 
