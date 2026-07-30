@@ -13,6 +13,15 @@ services:
       - QUANT_PROXY_ENABLED=false
       # Enable debug logging
       - LOG_DEBUG=true
+      # Local-dev database + secret (on Quant Cloud these are injected by the platform;
+      # they must NEVER move into the base docker-compose.yml — compose env overrides
+      # platform injection and breaks deployed apps)
+      - PAYLOAD_SECRET=${PAYLOAD_SECRET:-replace-me-with-a-random-string}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-payload}
+      - DB_USERNAME=${DB_USERNAME:-payload}
+      - DB_PASSWORD=${DB_PASSWORD:-payload}
     ports: !override
       - "3000:3001"  # Map to app port directly when proxy disabled
 
