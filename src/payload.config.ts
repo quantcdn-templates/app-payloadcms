@@ -107,7 +107,15 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: databaseUri,
-      ...(process.env.DB_SSL === 'true' ? { ssl: { rejectUnauthorized: false } } : {}),
+      // SSL defaults ON for any remote DB host (RDS enforces it: "no pg_hba.conf
+      // entry ... no encryption" otherwise). Local-dev hosts skip it; DB_SSL=false
+      // force-disables, DB_SSL=true force-enables.
+      ...(process.env.DB_SSL === 'true' ||
+      (process.env.DB_SSL !== 'false' &&
+        process.env.DB_HOST &&
+        !['db', 'localhost', '127.0.0.1'].includes(process.env.DB_HOST))
+        ? { ssl: { rejectUnauthorized: false } }
+        : {}),
     },
     // Applies committed migrations on production boot; throws (and fails the
     // deploy) if a migration fails. Dev mode still uses schema push.
