@@ -12,6 +12,8 @@
 - Media uploads stored on a persistent volume (EFS on Quant Cloud) at `MEDIA_DIR`
 - No database needed at build time: pages render on first request and are cached (ISR); Payload's publish hooks revalidate changed pages automatically
 - Schema migrations apply automatically at boot (`prodMigrations`); a failed migration fails the deploy loudly
+- Publishing content purges the edge cache, so changes appear immediately rather than after the CDN TTL (requires `QUANT_PURGE_*`)
+- Next's optimised-image and data caches live on the persistent volume, so they survive deploys and restarts instead of every image being re-optimised with sharp on first request
 
 ## Environment Variables
 
@@ -23,6 +25,9 @@
 | `DB_SSL` | Set `true` for TLS-enforcing databases (e.g. RDS) when using `DB_*` vars | No |
 | `MEDIA_DIR` | Upload directory (default `/data/media`) | No |
 | `QUANT_SMTP_HOST` / `QUANT_SMTP_PORT` / `QUANT_SMTP_USERNAME` / `QUANT_SMTP_PASSWORD` / `QUANT_SMTP_FROM` | SMTP relay for Payload emails (password resets etc.). Unset = emails are logged, not sent. Generic `SMTP_*` names also accepted. Port 465 = implicit TLS | No |
+| `QUANT_PURGE_TOKEN` / `QUANT_PURGE_ORG` / `QUANT_PURGE_PROJECT` | Purge the edge cache when content changes. All three required to enable; unset = no purging. Token needs the `content:purge` scope | No |
+| `QUANT_PURGE_ENDPOINT` | Purge API base (default `https://dashboard.quantcdn.io/api/v1`; QuantGov: `https://dash.quantgov.cloud/api/v1`) | No |
+| `NEXT_CACHE_PERSIST` / `NEXT_CACHE_DIR` | Persist Next's image + data caches on the volume (default on, at `/data/next-cache`). Set `NEXT_CACHE_PERSIST=false` to opt out | No |
 | `NEXT_PUBLIC_SERVER_URL` | Public URL of the site (used for live preview/SEO links) | Recommended |
 
 ## Local Development
