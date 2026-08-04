@@ -3,6 +3,7 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'paylo
 import { revalidatePath, revalidateTag } from 'next/cache'
 
 import type { Page } from '../../../payload-types'
+import { purgeEdgeCache } from '../../../utilities/edgePurge'
 
 export const revalidatePage: CollectionAfterChangeHook<Page> = ({
   doc,
@@ -28,15 +29,18 @@ export const revalidatePage: CollectionAfterChangeHook<Page> = ({
       revalidatePath(oldPath)
       revalidateTag('pages-sitemap', 'max')
     }
+
+    purgeEdgeCache(payload.logger)
   }
   return doc
 }
 
-export const revalidateDelete: CollectionAfterDeleteHook<Page> = ({ doc, req: { context } }) => {
+export const revalidateDelete: CollectionAfterDeleteHook<Page> = ({ doc, req: { payload, context } }) => {
   if (!context.disableRevalidate) {
     const path = doc?.slug === 'home' ? '/' : `/${doc?.slug}`
     revalidatePath(path)
     revalidateTag('pages-sitemap', 'max')
+    purgeEdgeCache(payload.logger)
   }
 
   return doc
