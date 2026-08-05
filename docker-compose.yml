@@ -1,3 +1,11 @@
+# Task sizing for Quant Cloud. The platform defaults to 256 CPU / 512MB, which
+# is not enough for this template: sharp image optimisation and the seed route
+# exhaust it and the task is killed by health checks. These are read by Quant's
+# compose import (x-quant-labels) and ignored by local docker compose.
+x-quant-labels:
+  quant.task.cpu: '512'
+  quant.task.memory: '1024'
+
 services:
   app:
     build:

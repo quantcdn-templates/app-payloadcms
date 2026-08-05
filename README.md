@@ -14,6 +14,7 @@
 - Schema migrations apply automatically at boot (`prodMigrations`); a failed migration fails the deploy loudly
 - Publishing content purges the edge cache, so changes appear immediately rather than after the CDN TTL (requires `QUANT_PURGE_*`)
 - Next's optimised-image and data caches live on the persistent volume, so they survive deploys and restarts instead of every image being re-optimised with sharp on first request
+- Task sized at 512 CPU / 1024MB via `x-quant-labels` in `docker-compose.yml` — the platform default of 256/512 is too small for sharp image optimisation (the task gets killed by health checks). Adjust there if your site is heavier
 
 ## Environment Variables
 
