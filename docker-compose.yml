@@ -5,9 +5,7 @@
 x-quant-labels:
   quant.task.cpu: '512'
   quant.task.memory: '1024'
-
-# Quant Cloud: run on ARM64 to match the arm64 images the org builds.
-x-quant-labels:
+  # Run on ARM64 to match the arm64 images the org builds.
   quant.architecture: ARM64
 
 services:
