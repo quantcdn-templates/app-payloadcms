@@ -145,7 +145,8 @@ jobs:
             echo "No generated secrets declared in quant/meta.json"
             exit 0
           fi
-          EXISTING=$(curl -fsS -H "$AUTH" "$URL/variables" | python3 -c 'import sys,json; d=json.load(sys.stdin); d=d.get("environment", d) if isinstance(d, dict) else d; print(" ".join(v["name"] for v in d))')
+          # The variables endpoint returns a list of {"key": ..., "value": ...}.
+          EXISTING=$(curl -fsS -H "$AUTH" "$URL/variables" | python3 -c 'import sys,json; d=json.load(sys.stdin); d=d.get("environment", d) if isinstance(d, dict) else d; print(" ".join(v.get("key") or v.get("name") for v in d))')
           : > added-secrets.txt
           while read -r NAME LEN; do
             case " $EXISTING " in *" $NAME "*) echo "$NAME already set"; continue;; esac
