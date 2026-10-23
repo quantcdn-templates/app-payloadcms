@@ -20,8 +20,8 @@ import { getServerSideURL } from './utilities/getURL'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-// Quant Cloud injects DB_* credentials for managed Postgres/RDS; a full
-// DATABASE_URI (e.g. bring-your-own RDS or hosted Postgres) takes precedence.
+// Quant Cloud injects DB_* credentials for managed Postgres; a full
+// DATABASE_URI (e.g. bring-your-own hosted database or hosted Postgres) takes precedence.
 // DATABASE_URL is kept as an alias for compatibility with upstream Payload
 // docs and this scaffold's own .env.example.
 const databaseUri =
@@ -107,7 +107,7 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: databaseUri,
-      // SSL defaults ON for any remote DB host (RDS enforces it: "no pg_hba.conf
+      // SSL defaults ON for any remote DB host (managed databases enforce it: "no pg_hba.conf
       // entry ... no encryption" otherwise). Local-dev hosts skip it; DB_SSL=false
       // force-disables, DB_SSL=true force-enables.
       ...(process.env.DB_SSL === 'true' ||

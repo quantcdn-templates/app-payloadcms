@@ -40,7 +40,7 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
-    // MEDIA_DIR is a persistent volume in containers (EFS on Quant Cloud);
+    // MEDIA_DIR is a persistent volume in containers (shared filesystem on Quant Cloud);
     // the public/ fallback keeps bare `npm run dev` working.
     staticDir: process.env.MEDIA_DIR || path.resolve(dirname, '../../public/media'),
     adminThumbnail: 'thumbnail',

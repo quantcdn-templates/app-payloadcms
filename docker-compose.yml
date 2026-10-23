@@ -19,7 +19,7 @@ services:
       - "3000:3000"
     environment:
       # CRITICAL: do NOT set DB_* or PAYLOAD_SECRET here. Compose-declared env always
-      # OVERRIDES Quant Cloud's injected values (RDS DB_HOST/credentials, generated
+      # OVERRIDES Quant Cloud's injected values (managed database DB_HOST/credentials, generated
       # secrets) — hardcoding them here breaks deployed apps. Local-dev values live in
       # docker-compose.override.yml.example.
       - NODE_ENV=production
