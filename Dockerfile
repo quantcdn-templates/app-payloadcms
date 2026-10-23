@@ -38,12 +38,12 @@ COPY --from=builder --chown=node:node /build/public ./public
 # CRITICAL: App port must be 3001 (proxy runs on 3000)
 ENV PORT=3001
 ENV HOSTNAME="0.0.0.0"
-# Persistent media (EFS on Quant Cloud, named volume locally)
+# Persistent media (shared filesystem on Quant Cloud, named volume locally)
 ENV MEDIA_DIR=/data/media
 
 EXPOSE 3000
 
-# HOSTNAME must be forced at exec time: Fargate's container runtime sets HOSTNAME to the
+# HOSTNAME must be forced at exec time: the platform's container runtime sets HOSTNAME to the
 # task ENI hostname, overriding the ENV above — Next standalone then binds to the ENI IP
 # and the quant-proxy's 127.0.0.1:3001 forward gets ECONNREFUSED.
 CMD ["sh", "-c", "HOSTNAME=0.0.0.0 exec node server.js"]

@@ -8,8 +8,8 @@
 
 - Next.js 16 standalone build on Node 24 behind the Quant proxy (app on port 3001, proxy on 3000)
   - Node 24 is required if you enable Next 16's Cache Components (`cacheComponents: true`) — its runtime is broken on Node 22. Cache Components also rejects empty `generateStaticParams`, which is why this template builds with `--experimental-build-mode compile`
-- PostgreSQL via `@payloadcms/db-postgres` — works with Quant managed Postgres or your own RDS instance
-- Media uploads stored on a persistent volume (EFS on Quant Cloud) at `MEDIA_DIR`
+- PostgreSQL via `@payloadcms/db-postgres` — works with Quant managed Postgres or your own database instance
+- Media uploads stored on a persistent volume (shared filesystem on Quant Cloud) at `MEDIA_DIR`
 - No database needed at build time: pages render on first request and are cached (ISR); Payload's publish hooks revalidate changed pages automatically
 - Schema migrations apply automatically at boot (`prodMigrations`); a failed migration fails the deploy loudly
 - Publishing content purges the edge cache, so changes appear immediately rather than after the CDN TTL (requires `QUANT_PURGE_*`)
@@ -23,7 +23,7 @@
 | `PAYLOAD_SECRET` | Secret for auth tokens/sessions (`openssl rand -base64 32`) | Yes |
 | `DATABASE_URI` | Full Postgres connection string (takes precedence; `DATABASE_URL` is accepted as an alias) | One of these |
 | `DB_HOST` / `DB_PORT` / `DB_DATABASE` / `DB_USERNAME` / `DB_PASSWORD` | Injected by Quant Cloud managed Postgres; assembled into a connection string automatically | One of these |
-| `DB_SSL` | Set `true` for TLS-enforcing databases (e.g. RDS) when using `DB_*` vars | No |
+| `DB_SSL` | Set `true` for TLS-enforcing databases (e.g. a managed database) when using `DB_*` vars | No |
 | `MEDIA_DIR` | Upload directory (default `/data/media`) | No |
 | `QUANT_SMTP_HOST` / `QUANT_SMTP_PORT` / `QUANT_SMTP_USERNAME` / `QUANT_SMTP_PASSWORD` / `QUANT_SMTP_FROM` | SMTP relay for Payload emails (password resets etc.). Unset = emails are logged, not sent. Generic `SMTP_*` names also accepted. Port 465 = implicit TLS | No |
 | `QUANT_PURGE_TOKEN` / `QUANT_PURGE_ORG` / `QUANT_PURGE_PROJECT` | Purge the edge cache when content changes. All three required to enable; unset = no purging. Token needs the `content:purge` scope | No |
@@ -63,7 +63,7 @@ Migrations apply automatically when the container boots.
 Supabase's database is standard PostgreSQL, so a Payload site migrates cleanly:
 
 1. **Adapter:** if your `payload.config.ts` uses `@payloadcms/db-vercel-postgres`, switch to `@payloadcms/db-postgres` (same schema; config shape matches this template).
-2. **Database:** dump from Supabase using the **direct** connection (port 5432, not the Supavisor pooler on 6543), restore into your Quant/RDS Postgres:
+2. **Database:** dump from Supabase using the **direct** connection (port 5432, not the Supavisor pooler on 6543), restore into your Quant managed Postgres:
    ```bash
    pg_dump --clean --if-exists --schema=public "$SUPABASE_DIRECT_URI" > payload.sql
    psql "$DATABASE_URI" < payload.sql
