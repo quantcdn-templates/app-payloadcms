@@ -81,3 +81,9 @@ Supabase's database is standard PostgreSQL, so a Payload site migrates cleanly:
 ## Deployment
 
 Push to `main` (production) or `develop` (staging). Configure repository secrets `QUANT_API_KEY` and `QUANT_ORGANIZATION`. Optional repo variables: `RUNNER_TYPE`, `BUILD_PLATFORM`, `QUANT_BASE_URL` (QuantGov: `https://dash.quantgov.cloud/api/v3`).
+
+## Managed database TLS
+
+Managed database connections verify the server certificate using the shared
+`/opt/rds-ca-certs/rds-ca-cert-bundle.pem` trust bundle, matching Drupal.
+Set `DISABLE_DB_TLS=true` only for a local development database.
