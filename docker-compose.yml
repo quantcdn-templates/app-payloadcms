@@ -5,11 +5,11 @@
 x-quant-labels:
   quant.task.cpu: '512'
   quant.task.memory: '1024'
-  # Run on ARM64 to match the arm64 images the org builds.
-  quant.architecture: ARM64
+  quant.architecture: X86_64
 
 services:
   app:
+    image: ghcr.io/quantcdn-templates/app-payloadcms:latest
     build:
       context: .
       args:
