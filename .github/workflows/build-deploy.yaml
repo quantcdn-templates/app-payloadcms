@@ -86,4 +86,3 @@ jobs:
           environment: ${{ steps.init.outputs.environment_name }}
           action: redeploy
           base_url: ${{ env.QUANT_BASE_URL }}
-
