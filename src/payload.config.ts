@@ -107,14 +107,13 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: databaseUri,
-      // SSL defaults ON for any remote DB host (managed databases enforce it: "no pg_hba.conf
-      // entry ... no encryption" otherwise). Local-dev hosts skip it; DB_SSL=false
-      // force-disables, DB_SSL=true force-enables.
-      ...(process.env.DB_SSL === 'true' ||
-      (process.env.DB_SSL !== 'false' &&
-        process.env.DB_HOST &&
-        !['db', 'localhost', '127.0.0.1'].includes(process.env.DB_HOST))
-        ? { ssl: { rejectUnauthorized: false } }
+      // Match Drupal: verify managed DB certificates using the shared CA bundle
+      // (trusted through app-node's NODE_EXTRA_CA_CERTS). Opt out only for local DBs.
+      ...(process.env.DISABLE_DB_TLS !== 'true' &&
+      (process.env.DB_SSL === 'true' ||
+        (process.env.DB_SSL !== 'false' && process.env.DB_HOST &&
+          !['db', 'localhost', '127.0.0.1'].includes(process.env.DB_HOST)))
+        ? { ssl: { rejectUnauthorized: true } }
         : {}),
     },
     // Applies committed migrations on production boot; throws (and fails the
