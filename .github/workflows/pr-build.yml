@@ -1,0 +1,52 @@
+# Required check for every pull request to main (operator decision 2026-11-19): package-lock.json must
+# match package.json, the image must build from it, and the bundled Payload must load. Dependabot
+# auto-merge waits for this. It never pushes and never writes the build cache.
+name: pr-build
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: package-lock.json matches package.json
+        run: |
+          docker run --rm -v "$PWD:/app" -w /app node:24-bookworm-slim \
+            sh -c 'npm ci --dry-run --ignore-scripts --no-audit --no-fund >/dev/null'
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build image (amd64, no push)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          pull: true
+          tags: pr-build:test
+          cache-from: type=gha
+
+      # The runtime image holds the Next standalone output: only traced files, so payload has no
+      # package.json there. Check the Next version, the server entry and the bundled payload code.
+      - name: Next standalone and payload in the image
+        run: |
+          docker run --rm --entrypoint sh pr-build:test -c '
+            set -e
+            cd /app
+            node -e "console.log(\"next\", require(\"./node_modules/next/package.json\").version)"
+            test -f server.js
+            test -d node_modules/payload/dist
+          '
