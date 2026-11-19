@@ -7,10 +7,9 @@ WORKDIR /build
 # Copy package files (.npmrc is required for npm ci: legacy-peer-deps=true)
 COPY package*.json .npmrc ./
 
-# Install dependencies (package-lock.json is git-ignored in this template,
-# so a clean checkout has none and `npm ci` would hard-fail; `npm install`
-# resolves from package.json instead)
-RUN npm install
+# Install exactly the versions in package-lock.json (committed; updated by
+# Dependabot PRs, see .github/dependabot.yml). Both architectures get the same tree.
+RUN npm ci
 
 # Copy source files
 COPY . .
