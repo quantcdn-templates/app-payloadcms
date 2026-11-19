@@ -23,7 +23,7 @@ jobs:
             runner: ubuntu-24.04-arm
     runs-on: ${{ contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && vars.QUANT_RUNS_ON_X64 && fromJSON(matrix.arch == 'arm64' && vars.QUANT_RUNS_ON_ARM64 || vars.QUANT_RUNS_ON_X64) || matrix.runner }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       - name: Initialize Quant Cloud
         uses: quantcdn/quant-cloud-init-action@v4
@@ -50,7 +50,7 @@ jobs:
     needs: build
     runs-on: ${{ contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && vars.QUANT_RUNS_ON_X64 && fromJSON(vars.QUANT_RUNS_ON_X64) || 'ubuntu-latest' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       - name: Initialize Quant Cloud
         uses: quantcdn/quant-cloud-init-action@v4
